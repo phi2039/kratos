@@ -51,7 +51,7 @@ func TestMigrations(t *testing.T) {
 	l := logrusx.New("", "", logrusx.ForceLevel(logrus.TraceLevel))
 	plog.Logger = gobuffalologger.Logrus{FieldLogger: l.Entry}
 
-	if !testing.Short() && false {
+	if !testing.Short() {
 		dockertest.Parallel([]func(){
 			func() {
 				connections["postgres"] = dockertest.ConnectToTestPostgreSQLPop(t)
@@ -125,21 +125,21 @@ func TestMigrations(t *testing.T) {
 				})
 
 				t.Run("case=login", func(t *testing.T) {
-					var ids []login.Request
+					var ids []login.Flow
 					require.NoError(t, c.Select("id").All(&ids))
 
 					for _, id := range ids {
-						actual, err := d.Registry().LoginRequestPersister().GetLoginRequest(context.Background(), id.ID)
+						actual, err := d.Registry().LoginFlowPersister().GetLoginFlow(context.Background(), id.ID)
 						require.NoError(t, err)
 						compareWithFixture(t, actual, "login_request", id.ID.String())
 					}
 				})
 				t.Run("case=registration", func(t *testing.T) {
-					var ids []registration.Request
+					var ids []registration.Flow
 					require.NoError(t, c.Select("id").All(&ids))
 
 					for _, id := range ids {
-						actual, err := d.Registry().RegistrationRequestPersister().GetRegistrationRequest(context.Background(), id.ID)
+						actual, err := d.Registry().RegistrationFlowPersister().GetRegistrationFlow(context.Background(), id.ID)
 						require.NoError(t, err)
 						compareWithFixture(t, actual, "registration_request", id.ID.String())
 					}

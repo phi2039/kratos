@@ -95,7 +95,7 @@ type Registry interface {
 	settings.RequestPersistenceProvider
 	settings.StrategyProvider
 
-	login.RequestPersistenceProvider
+	login.FlowPersistenceProvider
 	login.ErrorHandlerProvider
 	login.HooksProvider
 	login.HookExecutorProvider
@@ -104,7 +104,7 @@ type Registry interface {
 
 	logout.HandlerProvider
 
-	registration.RequestPersistenceProvider
+	registration.FlowPersistenceProvider
 	registration.ErrorHandlerProvider
 	registration.HooksProvider
 	registration.HookExecutorProvider

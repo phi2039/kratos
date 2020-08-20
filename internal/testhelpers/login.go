@@ -14,13 +14,24 @@ import (
 	"github.com/ory/kratos/x"
 )
 
-func NewLoginUIRequestEchoServer(t *testing.T, reg driver.Registry) *httptest.Server {
+func NewLoginUIFlowEchoServer(t *testing.T, reg driver.Registry) *httptest.Server {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		e, err := reg.LoginRequestPersister().GetLoginRequest(r.Context(), x.ParseUUID(r.URL.Query().Get("request")))
+		e, err := reg.LoginFlowPersister().GetLoginFlow(r.Context(), x.ParseUUID(r.URL.Query().Get("flow")))
 		require.NoError(t, err)
 		reg.Writer().Write(w, r, e)
 	}))
 	viper.Set(configuration.ViperKeySelfServiceLoginUI, ts.URL+"/login-ts")
+	t.Cleanup(ts.Close)
+	return ts
+}
+
+func NewRegistrationUIFlowEchoServer(t *testing.T, reg driver.Registry) *httptest.Server {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		e, err := reg.RegistrationFlowPersister().GetRegistrationFlow(r.Context(), x.ParseUUID(r.URL.Query().Get("flow")))
+		require.NoError(t, err)
+		reg.Writer().Write(w, r, e)
+	}))
+	viper.Set(configuration.ViperKeySelfServiceRegistrationUI, ts.URL+"/registration-ts")
 	t.Cleanup(ts.Close)
 	return ts
 }

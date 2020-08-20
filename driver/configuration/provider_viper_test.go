@@ -8,8 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/markbates/pkger"
-
 	"github.com/ory/x/logrusx"
 
 	_ "github.com/ory/jsonschema/v3/fileloader"
@@ -28,14 +26,10 @@ import (
 var schema []byte
 
 func init() {
-	file, err := pkger.Open("/.schema/config.schema.json")
+	var err error
+	schema, err = ioutil.ReadFile("../../.schema/config.schema.json")
 	if err != nil {
 		panic("Unable to open configuration JSON Schema.")
-	}
-	defer file.Close()
-	schema, err = ioutil.ReadAll(file)
-	if err != nil {
-		panic("Unable to read configuration JSON Schema.")
 	}
 }
 
@@ -54,7 +48,7 @@ func TestViperProvider(t *testing.T) {
 		t.Run("group=urls", func(t *testing.T) {
 			assert.Equal(t, "http://test.kratos.ory.sh/login", p.SelfServiceFlowLoginUI().String())
 			assert.Equal(t, "http://test.kratos.ory.sh/settings", p.SelfServiceFlowSettingsUI().String())
-			assert.Equal(t, "http://test.kratos.ory.sh/register", p.SelfServiceFlowRegisterUI().String())
+			assert.Equal(t, "http://test.kratos.ory.sh/register", p.SelfServiceFlowRegistrationUI().String())
 			assert.Equal(t, "http://test.kratos.ory.sh/error", p.SelfServiceFlowErrorURL().String())
 
 			assert.Equal(t, "http://admin.kratos.ory.sh", p.SelfAdminURL().String())
@@ -400,7 +394,7 @@ func TestViperProvider_Defaults(t *testing.T) {
 		p := configuration.NewViperProvider(logrusx.New("", ""), false)
 		assert.Equal(t, "https://www.ory.sh/kratos/docs/fallback/login", p.SelfServiceFlowLoginUI().String())
 		assert.Equal(t, "https://www.ory.sh/kratos/docs/fallback/settings", p.SelfServiceFlowSettingsUI().String())
-		assert.Equal(t, "https://www.ory.sh/kratos/docs/fallback/registration", p.SelfServiceFlowRegisterUI().String())
+		assert.Equal(t, "https://www.ory.sh/kratos/docs/fallback/registration", p.SelfServiceFlowRegistrationUI().String())
 		assert.Equal(t, "https://www.ory.sh/kratos/docs/fallback/recovery", p.SelfServiceFlowRecoveryUI().String())
 		assert.Equal(t, "https://www.ory.sh/kratos/docs/fallback/verification", p.SelfServiceFlowVerificationUI().String())
 	})

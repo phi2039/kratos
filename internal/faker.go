@@ -12,6 +12,7 @@ import (
 	"github.com/ory/x/randx"
 
 	"github.com/ory/kratos/identity"
+	"github.com/ory/kratos/selfservice/flow"
 	"github.com/ory/kratos/selfservice/flow/login"
 	"github.com/ory/kratos/selfservice/flow/recovery"
 	"github.com/ory/kratos/selfservice/flow/registration"
@@ -80,16 +81,16 @@ func RegisterFakes() {
 		panic(err)
 	}
 
-	if err := faker.AddProvider("login_request_methods", func(v reflect.Value) (interface{}, error) {
-		var methods = make(map[identity.CredentialsType]*login.RequestMethod)
+	if err := faker.AddProvider("login_flow_methods", func(v reflect.Value) (interface{}, error) {
+		var methods = make(map[identity.CredentialsType]*login.FlowMethod)
 		for _, ct := range []identity.CredentialsType{identity.CredentialsTypePassword, identity.CredentialsTypeOIDC} {
 			var f form.HTMLForm
 			if err := faker.FakeData(&f); err != nil {
 				return nil, err
 			}
-			methods[ct] = &login.RequestMethod{
+			methods[ct] = &login.FlowMethod{
 				Method: ct,
-				Config: &login.RequestMethodConfig{RequestMethodConfigurator: &f},
+				Config: &login.FlowMethodConfig{FlowMethodConfigurator: &f},
 			}
 
 		}
@@ -98,16 +99,16 @@ func RegisterFakes() {
 		panic(err)
 	}
 
-	if err := faker.AddProvider("registration_request_methods", func(v reflect.Value) (interface{}, error) {
-		var methods = make(map[identity.CredentialsType]*registration.RequestMethod)
+	if err := faker.AddProvider("registration_flow_methods", func(v reflect.Value) (interface{}, error) {
+		var methods = make(map[identity.CredentialsType]*registration.FlowMethod)
 		for _, ct := range []identity.CredentialsType{identity.CredentialsTypePassword, identity.CredentialsTypeOIDC} {
 			var f form.HTMLForm
 			if err := faker.FakeData(&f); err != nil {
 				return nil, errors.WithStack(err)
 			}
-			methods[ct] = &registration.RequestMethod{
+			methods[ct] = &registration.FlowMethod{
 				Method: ct,
-				Config: &registration.RequestMethodConfig{RequestMethodConfigurator: &f},
+				Config: &registration.FlowMethodConfig{FlowMethodConfigurator: &f},
 			}
 		}
 		return methods, nil
@@ -115,7 +116,7 @@ func RegisterFakes() {
 		panic(err)
 	}
 
-	if err := faker.AddProvider("settings_request_methods", func(v reflect.Value) (interface{}, error) {
+	if err := faker.AddProvider("settings_flow_methods", func(v reflect.Value) (interface{}, error) {
 		var methods = make(map[string]*settings.RequestMethod)
 		for _, ct := range []string{settings.StrategyProfile, string(identity.CredentialsTypePassword), string(identity.CredentialsTypeOIDC)} {
 			var f form.HTMLForm
@@ -132,7 +133,7 @@ func RegisterFakes() {
 		panic(err)
 	}
 
-	if err := faker.AddProvider("recovery_request_methods", func(v reflect.Value) (interface{}, error) {
+	if err := faker.AddProvider("recovery_flow_methods", func(v reflect.Value) (interface{}, error) {
 		var methods = make(map[string]*recovery.RequestMethod)
 		for _, ct := range []string{recovery.StrategyRecoveryTokenName} {
 			var f form.HTMLForm
@@ -158,6 +159,15 @@ func RegisterFakes() {
 	if err := faker.AddProvider("identity", func(v reflect.Value) (interface{}, error) {
 		var i identity.Identity
 		return &i, faker.FakeData(&i)
+	}); err != nil {
+		panic(err)
+	}
+
+	if err := faker.AddProvider("flow_type", func(v reflect.Value) (interface{}, error) {
+		if rand.Intn(2) == 0 {
+			return flow.TypeAPI, nil
+		}
+		return flow.TypeBrowser, nil
 	}); err != nil {
 		panic(err)
 	}

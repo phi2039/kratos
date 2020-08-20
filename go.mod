@@ -2,6 +2,8 @@ module github.com/ory/kratos
 
 go 1.14
 
+replace github.com/justinas/nosurf => github.com/aeneasr/nosurf v1.1.1-0.20200817183017-ee7691f82e7d
+
 require (
 	github.com/Masterminds/sprig/v3 v3.0.0
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
@@ -22,11 +24,11 @@ require (
 	github.com/go-playground/locales v0.12.1 // indirect
 	github.com/go-playground/universal-translator v0.16.0 // indirect
 	github.com/go-swagger/go-swagger v0.25.0
-	github.com/gobuffalo/fizz v1.11.0
+	github.com/gobuffalo/fizz v1.11.1-0.20200706214517-4e9fb9ced4ce
 	github.com/gobuffalo/httptest v1.0.2
 	github.com/gobuffalo/logger v1.0.3
 	github.com/gobuffalo/packr/v2 v2.8.0
-	github.com/gobuffalo/pop/v5 v5.2.4-0.20200707154617-81b8a32a605f
+	github.com/gobuffalo/pop/v5 v5.2.4-0.20200706214017-1dd950510b30
 	github.com/gobuffalo/uuid v2.0.5+incompatible
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/golang/gddo v0.0.0-20190904175337-72a348e765d2
@@ -46,13 +48,12 @@ require (
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/justinas/nosurf v1.1.0
 	github.com/leodido/go-urn v1.1.0 // indirect
-	github.com/markbates/pkger v0.17.0
 	github.com/mattn/goveralls v0.0.5
 	github.com/mikefarah/yq v1.15.0
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7 // indirect
 	github.com/ory/analytics-go/v4 v4.0.0
-	github.com/ory/cli v0.0.12
+	github.com/ory/cli v0.0.24
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/ory/dockertest/v3 v3.5.4
 	github.com/ory/go-acc v0.1.0
@@ -62,7 +63,7 @@ require (
 	github.com/ory/jsonschema/v3 v3.0.1
 	github.com/ory/mail/v3 v3.0.0
 	github.com/ory/viper v1.7.5
-	github.com/ory/x v0.0.135
+	github.com/ory/x v0.0.143
 	github.com/phayes/freeport v0.0.0-20180830031419-95f893ade6f2
 	github.com/pkg/errors v0.9.1
 	github.com/shurcooL/go v0.0.0-20180423040247-9e1955d9fb6e

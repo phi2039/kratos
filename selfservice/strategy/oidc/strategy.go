@@ -58,14 +58,14 @@ type dependencies interface {
 	session.HandlerProvider
 
 	login.HookExecutorProvider
-	login.RequestPersistenceProvider
+	login.FlowPersistenceProvider
 	login.HooksProvider
 	login.StrategyProvider
 	login.HandlerProvider
 	login.ErrorHandlerProvider
 
 	registration.HookExecutorProvider
-	registration.RequestPersistenceProvider
+	registration.FlowPersistenceProvider
 	registration.HooksProvider
 	registration.StrategyProvider
 	registration.HandlerProvider
@@ -212,14 +212,14 @@ func (s *Strategy) validateRequest(ctx context.Context, r *http.Request, rid uui
 		return nil, errors.WithStack(herodot.ErrBadRequest.WithReason("The session cookie contains invalid values and the request could not be executed. Please try again."))
 	}
 
-	if ar, err := s.d.RegistrationRequestPersister().GetRegistrationRequest(ctx, rid); err == nil {
+	if ar, err := s.d.RegistrationFlowPersister().GetRegistrationFlow(ctx, rid); err == nil {
 		if err := ar.Valid(); err != nil {
 			return ar, err
 		}
 		return ar, nil
 	}
 
-	if ar, err := s.d.LoginRequestPersister().GetLoginRequest(ctx, rid); err == nil {
+	if ar, err := s.d.LoginFlowPersister().GetLoginFlow(ctx, rid); err == nil {
 		if err := ar.Valid(); err != nil {
 			return ar, err
 		}
@@ -336,10 +336,10 @@ func (s *Strategy) handleCallback(w http.ResponseWriter, r *http.Request, ps htt
 	}
 
 	switch a := req.(type) {
-	case *login.Request:
+	case *login.Flow:
 		s.processLogin(w, r, a, claims, provider, container)
 		return
-	case *registration.Request:
+	case *registration.Flow:
 		s.processRegistration(w, r, a, claims, provider, container)
 		return
 	case *settings.Request:
@@ -413,13 +413,13 @@ func (s *Strategy) handleError(w http.ResponseWriter, r *http.Request, rid uuid.
 		return
 	}
 
-	if lr, rerr := s.d.LoginRequestPersister().GetLoginRequest(r.Context(), rid); rerr == nil {
-		s.d.LoginRequestErrorHandler().HandleLoginError(w, r, s.ID(), lr, err)
+	if lr, rerr := s.d.LoginFlowPersister().GetLoginFlow(r.Context(), rid); rerr == nil {
+		s.d.LoginFlowErrorHandler().WriteFlowError(w, r, s.ID(), lr, err)
 		return
 	} else if sr, rerr := s.d.SettingsRequestPersister().GetSettingsRequest(r.Context(), rid); rerr == nil {
 		s.d.SettingsRequestErrorHandler().HandleSettingsError(w, r, sr, err, s.SettingsStrategyID())
 		return
-	} else if rr, rerr := s.d.RegistrationRequestPersister().GetRegistrationRequest(r.Context(), rid); rerr == nil {
+	} else if rr, rerr := s.d.RegistrationFlowPersister().GetRegistrationFlow(r.Context(), rid); rerr == nil {
 		if method, ok := rr.Methods[s.ID()]; ok {
 			method.Config.UnsetField("provider")
 			method.Config.Reset()
@@ -431,14 +431,14 @@ func (s *Strategy) handleError(w http.ResponseWriter, r *http.Request, rid uuid.
 			}
 
 			if errSec := method.Config.ParseError(err); errSec != nil {
-				s.d.RegistrationRequestErrorHandler().HandleRegistrationError(w, r, s.ID(), rr, errSec)
+				s.d.RegistrationFlowErrorHandler().WriteFlowError(w, r, s.ID(), rr, errSec)
 				return
 			}
 			method.Config.ResetMessages()
 
 			method.Config.SetCSRF(s.d.GenerateCSRFToken(r))
 			if errSec := method.Config.SortFields(s.c.DefaultIdentityTraitsSchemaURL().String()); errSec != nil {
-				s.d.RegistrationRequestErrorHandler().HandleRegistrationError(w, r, s.ID(), rr, errors.Wrap(err, errSec.Error()))
+				s.d.RegistrationFlowErrorHandler().WriteFlowError(w, r, s.ID(), rr, errors.Wrap(err, errSec.Error()))
 				return
 			}
 
@@ -447,7 +447,7 @@ func (s *Strategy) handleError(w http.ResponseWriter, r *http.Request, rid uuid.
 			rr.Methods[s.ID()] = method
 		}
 
-		s.d.RegistrationRequestErrorHandler().HandleRegistrationError(w, r, s.ID(), rr, err)
+		s.d.RegistrationFlowErrorHandler().WriteFlowError(w, r, s.ID(), rr, err)
 		return
 	}
 

@@ -41,14 +41,6 @@ func servePublic(d driver.Driver, wg *sync.WaitGroup, cmd *cobra.Command, args [
 	r := d.Registry()
 
 	router := x.NewRouterPublic()
-	r.RegisterPublicRoutes(router)
-	n.Use(NewNegroniLoggerMiddleware(l, "public#"+c.SelfPublicURL().String()))
-	n.Use(sqa(cmd, d))
-
-	if tracer := d.Registry().Tracer(); tracer.IsLoaded() {
-		n.Use(tracer)
-	}
-
 	csrf := x.NewCSRFHandler(
 		router,
 		r.Writer(),
@@ -57,9 +49,17 @@ func servePublic(d driver.Driver, wg *sync.WaitGroup, cmd *cobra.Command, args [
 		c.SelfPublicURL().Hostname(),
 		!flagx.MustGetBool(cmd, "dev"),
 	)
-	csrf.ExemptPath(session.SessionsWhoamiPath)
 	r.WithCSRFHandler(csrf)
 	n.UseHandler(r.CSRFHandler())
+
+	r.RegisterPublicRoutes(router)
+	n.Use(NewNegroniLoggerMiddleware(l, "public#"+c.SelfPublicURL().String()))
+	n.Use(sqa(cmd, d))
+
+	if tracer := d.Registry().Tracer(); tracer.IsLoaded() {
+		n.Use(tracer)
+	}
+
 	server := graceful.WithDefaults(&http.Server{
 		Addr:    c.PublicListenOn(),
 		Handler: context.ClearHandler(n),
@@ -125,15 +125,15 @@ func sqa(cmd *cobra.Command, d driver.Driver) *metricsx.Service {
 				healthx.ReadyCheckPath,
 				healthx.VersionPath,
 				"/auth/methods/oidc/",
-				password.RegistrationPath,
-				password.LoginPath,
+				password.RouteRegistration,
+				password.RouteLogin,
 				oidc.BasePath,
-				login.BrowserLoginPath,
-				login.BrowserLoginRequestsPath,
+				login.RouteInitBrowserFlow,
+				login.RouteGetFlow,
 				logout.BrowserLogoutPath,
-				registration.BrowserRegistrationPath,
-				registration.BrowserRegistrationRequestsPath,
-				session.SessionsWhoamiPath,
+				registration.RouteInitBrowserFlow,
+				registration.RouteGetFlow,
+				session.RouteWhoami,
 				identity.IdentitiesPath,
 				profile.PublicSettingsProfilePath,
 				settings.PublicPath,

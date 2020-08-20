@@ -10,6 +10,7 @@ import (
 
 	"github.com/ory/kratos/driver/configuration"
 	"github.com/ory/kratos/identity"
+	"github.com/ory/kratos/selfservice/flow"
 	"github.com/ory/kratos/selfservice/flow/registration"
 	"github.com/ory/kratos/x"
 )
@@ -31,19 +32,19 @@ func (s *Strategy) RegisterRegistrationRoutes(r *x.RouterPublic) {
 	s.setRoutes(r)
 }
 
-func (s *Strategy) PopulateRegistrationMethod(r *http.Request, sr *registration.Request) error {
+func (s *Strategy) PopulateRegistrationMethod(r *http.Request, sr *registration.Flow) error {
 	config, err := s.populateMethod(r, sr.ID)
 	if err != nil {
 		return err
 	}
-	sr.Methods[s.ID()] = &registration.RequestMethod{
+	sr.Methods[s.ID()] = &registration.FlowMethod{
 		Method: s.ID(),
-		Config: &registration.RequestMethodConfig{RequestMethodConfigurator: config},
+		Config: &registration.FlowMethodConfig{FlowMethodConfigurator: config},
 	}
 	return nil
 }
 
-func (s *Strategy) processRegistration(w http.ResponseWriter, r *http.Request, a *registration.Request, claims *Claims, provider Provider, container *authCodeContainer) {
+func (s *Strategy) processRegistration(w http.ResponseWriter, r *http.Request, a *registration.Flow, claims *Claims, provider Provider, container *authCodeContainer) {
 	if _, _, err := s.d.PrivilegedIdentityPool().FindByCredentialsIdentifier(r.Context(), identity.CredentialsTypeOIDC, uid(provider.Config().ID, claims.Subject)); err == nil {
 		// If the identity already exists, we should perform the login flow instead.
 
@@ -57,7 +58,9 @@ func (s *Strategy) processRegistration(w http.ResponseWriter, r *http.Request, a
 		s.d.Logger().WithRequest(r).WithField("provider", provider.Config().ID).
 			WithField("subject", claims.Subject).
 			Debug("Received successful OpenID Connect callback but user is already registered. Re-initializing login flow now.")
-		ar, err := s.d.LoginHandler().NewLoginRequest(w, r)
+
+		// This endpoint only handles browser requests at the moment.
+		ar, err := s.d.LoginHandler().NewLoginFlow(w, r, flow.TypeBrowser)
 		if err != nil {
 			s.handleError(w, r, a.GetID(), provider.Config().ID, nil, err)
 			return

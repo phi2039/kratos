@@ -26,8 +26,8 @@ type Provider interface {
 type Persister interface {
 	continuity.Persister
 	identity.PrivilegedPool
-	registration.RequestPersister
-	login.RequestPersister
+	registration.FlowPersister
+	login.FlowPersister
 	settings.RequestPersister
 	courier.Persister
 	session.Persister

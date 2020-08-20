@@ -29,23 +29,7 @@ import (
 )
 
 const (
-	RegistrationPath              = "/self-service/browser/flows/registration/strategies/password"
-	registrationFormPayloadSchema = `{
-  "$id": "https://schemas.ory.sh/kratos/selfservice/password/registration/config.schema.json",
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": [
-    "password",
-    "traits"
-  ],
-  "properties": {
-    "password": {
-      "type": "string",
-      "minLength": 1
-    },
-    "traits": {}
-  }
-}`
+	RouteRegistration = "/self-service/registration/methods/password"
 )
 
 type RegistrationFormPayload struct {
@@ -53,11 +37,19 @@ type RegistrationFormPayload struct {
 	Traits   json.RawMessage `json:"traits"`
 }
 
-func (s *Strategy) RegisterRegistrationRoutes(r *x.RouterPublic) {
-	r.POST(RegistrationPath, s.d.SessionHandler().IsNotAuthenticated(s.handleRegistration, session.RedirectOnAuthenticated(s.c)))
+func (s *Strategy) RegisterRegistrationRoutes(public *x.RouterPublic) {
+	s.d.CSRFHandler().ExemptPath(RouteRegistration)
+	public.POST(RouteRegistration, s.d.SessionHandler().IsNotAuthenticated(s.handleRegistration, func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		handler := session.RedirectOnAuthenticated(s.c)
+		if x.IsJSONRequest(r) {
+			handler = session.RespondWithJSONErrorOnAuthenticated(s.d.Writer(), registration.ErrAlreadyLoggedIn)
+		}
+
+		handler(w, r, ps)
+	}))
 }
 
-func (s *Strategy) handleRegistrationError(w http.ResponseWriter, r *http.Request, rr *registration.Request, p *RegistrationFormPayload, err error) {
+func (s *Strategy) handleRegistrationError(w http.ResponseWriter, r *http.Request, rr *registration.Flow, p *RegistrationFormPayload, err error) {
 	if rr != nil {
 		if method, ok := rr.Methods[identity.CredentialsTypePassword]; ok {
 			method.Config.Reset()
@@ -71,17 +63,17 @@ func (s *Strategy) handleRegistrationError(w http.ResponseWriter, r *http.Reques
 			method.Config.SetCSRF(s.d.GenerateCSRFToken(r))
 			rr.Methods[identity.CredentialsTypePassword] = method
 			if errSec := method.Config.SortFields(s.c.DefaultIdentityTraitsSchemaURL().String()); errSec != nil {
-				s.d.RegistrationRequestErrorHandler().HandleRegistrationError(w, r, identity.CredentialsTypePassword, rr, errors.Wrap(err, errSec.Error()))
+				s.d.RegistrationFlowErrorHandler().WriteFlowError(w, r, identity.CredentialsTypePassword, rr, errors.Wrap(err, errSec.Error()))
 				return
 			}
 		}
 	}
 
-	s.d.RegistrationRequestErrorHandler().HandleRegistrationError(w, r, identity.CredentialsTypePassword, rr, err)
+	s.d.RegistrationFlowErrorHandler().WriteFlowError(w, r, identity.CredentialsTypePassword, rr, err)
 }
 
 func (s *Strategy) decoderRegistration() (decoderx.HTTPDecoderOption, error) {
-	raw, err := sjson.SetBytes([]byte(registrationFormPayloadSchema), "properties.traits.$ref", s.c.DefaultIdentityTraitsSchemaURL().String()+"#/properties/traits")
+	raw, err := sjson.SetBytes(registrationSchema, "properties.traits.$ref", s.c.DefaultIdentityTraitsSchemaURL().String()+"#/properties/traits")
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
@@ -94,14 +86,47 @@ func (s *Strategy) decoderRegistration() (decoderx.HTTPDecoderOption, error) {
 	return o, nil
 }
 
+// swagger:route GET /self-service/registration/methods/password public completeSelfServiceRegistrationFlowWithPasswordMethod
+//
+// Complete Registration Flow with Username/Email Password Method
+//
+// Use this endpoint to complete a registration flow by sending an identity's traits and password. This endpoint
+// behaves differently for API and browser flows.
+//
+// API flows expect `application/json` to be sent in the body and responds with
+//   - HTTP 200 and a application/json body with the created identity success - if the session hook is configured the
+//     `session` and `session_token` will also be included;
+//   - HTTP 302 redirect to a fresh registration flow if the original flow expired with the appropriate error messages set;
+//   - HTTP 400 on form validation errors.
+//
+// Browser flows expect `application/x-www-form-urlencoded` to be sent in the body and responds with
+//   - a HTTP 302 redirect to the post/after registration URL or the `return_to` value if it was set and if the registration succeeded;
+//   - a HTTP 302 redirect to the registration UI URL with the flow ID containing the validation errors otherwise.
+//
+// More information can be found at [ORY Kratos User Login and User Registration Documentation](https://www.ory.sh/docs/next/kratos/self-service/flows/user-login-user-registration).
+//
+//     Schemes: http, https
+//
+//     Consumes:
+//     - application/json
+//     - application/x-www-form-urlencoded
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       200: registrationViaApiResponse
+//       302: emptyResponse
+//       400: genericError
+//       500: genericError
 func (s *Strategy) handleRegistration(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	rid := x.ParseUUID(r.URL.Query().Get("request"))
+	rid := x.ParseUUID(r.URL.Query().Get("flow"))
 	if x.IsZeroUUID(rid) {
-		s.handleRegistrationError(w, r, nil, nil, errors.WithStack(herodot.ErrBadRequest.WithReasonf("The request Code is missing.")))
+		s.handleRegistrationError(w, r, nil, nil, errors.WithStack(herodot.ErrBadRequest.WithReasonf("The flow query parameter is missing.")))
 		return
 	}
 
-	ar, err := s.d.RegistrationRequestPersister().GetRegistrationRequest(r.Context(), rid)
+	ar, err := s.d.RegistrationFlowPersister().GetRegistrationFlow(r.Context(), rid)
 	if err != nil {
 		s.handleRegistrationError(w, r, nil, nil, err)
 		return
@@ -119,12 +144,7 @@ func (s *Strategy) handleRegistration(w http.ResponseWriter, r *http.Request, _ 
 		return
 	}
 
-	if err := decoderx.NewHTTP().Decode(r, &p,
-		decoderx.HTTPFormDecoder(),
-		option,
-		decoderx.HTTPDecoderSetIgnoreParseErrorsStrategy(decoderx.ParseErrorIgnore),
-		decoderx.HTTPDecoderSetValidatePayloads(false),
-	); err != nil {
+	if err := s.hd.Decode(r, &p, option, decoderx.HTTPDecoderSetValidatePayloads(false)); err != nil {
 		s.handleRegistrationError(w, r, ar, &p, err)
 		return
 	}
@@ -190,9 +210,9 @@ func (s *Strategy) validateCredentials(i *identity.Identity, pw string) error {
 	return nil
 }
 
-func (s *Strategy) PopulateRegistrationMethod(r *http.Request, sr *registration.Request) error {
+func (s *Strategy) PopulateRegistrationMethod(r *http.Request, sr *registration.Flow) error {
 	action := urlx.CopyWithQuery(
-		urlx.AppendPaths(s.c.SelfPublicURL(), RegistrationPath),
+		urlx.AppendPaths(s.c.SelfPublicURL(), RouteRegistration),
 		url.Values{"request": {sr.ID.String()}},
 	)
 
@@ -209,9 +229,9 @@ func (s *Strategy) PopulateRegistrationMethod(r *http.Request, sr *registration.
 		return err
 	}
 
-	sr.Methods[identity.CredentialsTypePassword] = &registration.RequestMethod{
+	sr.Methods[identity.CredentialsTypePassword] = &registration.FlowMethod{
 		Method: identity.CredentialsTypePassword,
-		Config: &registration.RequestMethodConfig{RequestMethodConfigurator: &RequestMethod{HTMLForm: htmlf}},
+		Config: &registration.FlowMethodConfig{FlowMethodConfigurator: &RequestMethod{HTMLForm: htmlf}},
 	}
 
 	return nil
