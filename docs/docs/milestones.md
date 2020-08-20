@@ -91,6 +91,7 @@ New feature or request
 
 #### Pull Requests
 
+* [ ] feat: implement API-based self-service flows ([kratos#624](https://github.com/ory/kratos/pull/624)) - [@hackerman](https://github.com/aeneasr)
 * [x] fix: resolve identity admin api issues  ([kratos#586](https://github.com/ory/kratos/pull/586)) - [@hackerman](https://github.com/aeneasr)
 
 ### [Blocker](https://github.com/ory/kratos/labels/blocker)
