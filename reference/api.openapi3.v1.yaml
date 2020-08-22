@@ -1402,7 +1402,7 @@ components:
       type: string
     UUID:
       type: string
-      format: uuid4
+      format: uuid
     VerifiableAddress:
       type: object
       required:
@@ -1503,23 +1503,23 @@ components:
         messages:
           $ref: "#/components/schemas/Messages"
         name:
-          description: Name is the equivalent of 
+          description: Name is the equivalent of
 
           type: string
         pattern:
-          description: Pattern is the equivalent of 
+          description: Pattern is the equivalent of
 
           type: string
         required:
-          description: Required is the equivalent of 
+          description: Required is the equivalent of
 
           type: boolean
         type:
-          description: Type is the equivalent of 
+          description: Type is the equivalent of
 
           type: string
         value:
-          description: Value is the equivalent of 
+          description: Value is the equivalent of
           type: object
     formFields:
       description: Fields contains multiple fields
