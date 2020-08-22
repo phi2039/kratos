@@ -1402,7 +1402,6 @@ components:
       type: string
     UUID:
       type: string
-      format: uuid
     VerifiableAddress:
       type: object
       required:
