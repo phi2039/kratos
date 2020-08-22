@@ -1,0 +1,1917 @@
+openapi: 3.0.0
+info:
+  description: Welcome to the ORY Kratos HTTP API documentation!
+  title: Ory Kratos
+  version: latest
+paths:
+  /health/alive:
+    get:
+      description: >-
+        This endpoint returns a 200 status code when the HTTP server is up
+        running.
+
+        This status does currently not include checks whether the database connection is working.
+
+
+        If the service supports TLS Edge Termination, this endpoint does not require the
+
+        X-Forwarded-Proto header to be set.
+
+
+        Be aware that if you are running multiple nodes of this service, the health status will never
+
+        refer to the cluster state, only to a single instance.
+      tags:
+        - health
+      summary: Check alive status
+      operationId: isInstanceAlive
+      responses:
+        "200":
+          description: healthStatus
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/healthStatus"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /health/ready:
+    get:
+      description: >-
+        This endpoint returns a 200 status code when the HTTP server is up
+        running and the environment dependencies (e.g.
+
+        the database) are responsive as well.
+
+
+        If the service supports TLS Edge Termination, this endpoint does not require the
+
+        X-Forwarded-Proto header to be set.
+
+
+        Be aware that if you are running multiple nodes of this service, the health status will never
+
+        refer to the cluster state, only to a single instance.
+      tags:
+        - health
+      summary: Check readiness status
+      operationId: isInstanceReady
+      responses:
+        "200":
+          description: healthStatus
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/healthStatus"
+        "503":
+          description: healthNotReadyStatus
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/healthNotReadyStatus"
+  /identities:
+    get:
+      description: >-
+        Lists all identities. Does not support search at the moment.
+
+
+        Learn how identities work in [ORY Kratos' User And Identity Model Documentation](https://www.ory.sh/docs/next/kratos/concepts/identity-user-model).
+      tags:
+        - admin
+      summary: List Identities
+      operationId: listIdentities
+      parameters:
+        - description: |-
+            Items per Page
+
+            This is the number of items per page.
+          name: per_page
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+            maximum: 500
+            default: 100
+        - description: Pagination Page
+          name: page
+          in: query
+          schema:
+            type: integer
+            format: int64
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: A list of identities.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Identity"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+    post:
+      description: >-
+        This endpoint creates an identity. It is NOT possible to set an
+        identity's credentials (password, ...)
+
+        using this method! A way to achieve that will be introduced in the future.
+
+
+        Learn how identities work in [ORY Kratos' User And Identity Model Documentation](https://www.ory.sh/docs/next/kratos/concepts/identity-user-model).
+      tags:
+        - admin
+      summary: Create an Identity
+      operationId: createIdentity
+      requestBody:
+        $ref: "#/components/requestBodies/Identity"
+      responses:
+        "201":
+          description: A single identity.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Identity"
+        "400":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  "/identities/{id}":
+    get:
+      description: Learn how identities work in [ORY Kratos' User And Identity Model
+        Documentation](https://www.ory.sh/docs/next/kratos/concepts/identity-user-model).
+      tags:
+        - admin
+      summary: Get an Identity
+      operationId: getIdentity
+      parameters:
+        - description: ID must be set to the ID of identity you want to get
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: A single identity.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Identity"
+        "400":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+    put:
+      description: >-
+        This endpoint updates an identity. It is NOT possible to set an
+        identity's credentials (password, ...)
+
+        using this method! A way to achieve that will be introduced in the future.
+
+
+        The full identity payload (except credentials) is expected. This endpoint does not support patching.
+
+
+        Learn how identities work in [ORY Kratos' User And Identity Model Documentation](https://www.ory.sh/docs/next/kratos/concepts/identity-user-model).
+      tags:
+        - admin
+      summary: Update an Identity
+      operationId: updateIdentity
+      parameters:
+        - description: ID must be set to the ID of identity you want to update
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        $ref: "#/components/requestBodies/Identity"
+      responses:
+        "200":
+          description: A single identity.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Identity"
+        "400":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "404":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+    delete:
+      description: >-
+        Calling this endpoint irrecoverably and permanently deletes the identity
+        given its ID. This action can not be undone.
+
+        This endpoint returns 204 when the identity was deleted or when the identity was not found, in which case it is
+
+        assumed that is has been deleted already.
+
+
+        Learn how identities work in [ORY Kratos' User And Identity Model Documentation](https://www.ory.sh/docs/next/kratos/concepts/identity-user-model).
+      tags:
+        - admin
+      summary: Delete an Identity
+      operationId: deleteIdentity
+      parameters:
+        - description: ID is the identity's ID.
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /recovery/link:
+    post:
+      description: >-
+        This endpoint creates a recovery link which should be given to the user
+        in order for them to recover
+
+        (or activate) their account.
+      tags:
+        - admin
+      summary: Create a Recovery Link
+      operationId: createRecoveryLink
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - identity_id
+              properties:
+                expires_in:
+                  description: >-
+                    Link Expires In
+
+
+                    The recovery link will expire at that point in time. Defaults to the configuration value of
+
+                    selfservice.flows.recovery.request_lifespan.
+                  type: string
+                  pattern: ^[0-9]+(ns|us|ms|s|m|h)$
+                identity_id:
+                  $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: createRecoveryLinkResponse
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createRecoveryLinkResponse"
+        "400":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "404":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  "/schemas/{id}":
+    get:
+      description: Get a traits schema definition
+      tags:
+        - common
+        - public
+        - admin
+      operationId: getSchema
+      parameters:
+        - description: ID must be set to the ID of schema you want to get
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: The raw identity traits schema
+          content:
+            application/json:
+              schema:
+                type: object
+        "404":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/login:
+    get:
+      description: >-
+        This endpoint initializes a browser-based user login flow. Once
+        initialized, the browser will be redirected to
+
+        selfservice.flows.login.ui_url with the request ID set as a query parameter. If a valid user session exists already, the browser will be
+
+        redirected to urls.default_redirect_url.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works
+
+        with browsers (Chrome, Firefox, ...).
+
+
+        More information can be found at [ORY Kratos User Login and User Registration Documentation](https://www.ory.sh/docs/next/kratos/self-service/flows/user-login-user-registration).
+      tags:
+        - public
+      summary: Initialize browser-based login user flow
+      operationId: initializeSelfServiceBrowserLoginFlow
+      parameters:
+        - description: |-
+            Refresh a login session
+
+            If set to true, this will refresh an existing login session by
+            asking the user to sign in again. This will reset the
+            authenticated_at time of the session.
+          name: refresh
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/logout:
+    get:
+      description: >-
+        This endpoint initializes a logout flow.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works
+
+        with browsers (Chrome, Firefox, ...).
+
+
+        On successful logout, the browser will be redirected (HTTP 302 Found) to urls.default_return_to.
+
+
+        More information can be found at [ORY Kratos User Logout Documentation](https://www.ory.sh/docs/next/kratos/self-service/flows/user-logout).
+      tags:
+        - public
+      summary: Initialize Browser-Based Logout User Flow
+      operationId: initializeSelfServiceBrowserLogoutFlow
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/recovery:
+    get:
+      description: >-
+        This endpoint initializes a browser-based account recovery flow. Once
+        initialized, the browser will be redirected to
+
+        selfservice.flows.recovery.ui_url with the request ID set as a query parameter. If a valid user session exists, the request
+
+        is aborted.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works
+
+        with browsers (Chrome, Firefox, ...).
+
+
+        More information can be found at [ORY Kratos Account Recovery Documentation](../self-service/flows/password-reset-account-recovery).
+      tags:
+        - public
+      summary: Initialize browser-based account recovery flow
+      operationId: initializeSelfServiceRecoveryFlow
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/recovery/link:
+    post:
+      description: >-
+        > This endpoint is NOT INTENDED for API clients and only works with
+        browsers (Chrome, Firefox, ...) and HTML Forms.
+
+
+        More information can be found at [ORY Kratos Account Recovery Documentation](../self-service/flows/password-reset-account-recovery).
+      tags:
+        - public
+      summary: Complete the browser-based recovery flow using a recovery link
+      operationId: completeSelfServiceBrowserRecoveryLinkStrategyFlow
+      parameters:
+        - description: >-
+            Recovery Token
+
+
+            The recovery token which completes the recovery request. If the token
+
+            is invalid (e.g. expired) an error will be shown to the end-user.
+          name: token
+          in: query
+          schema:
+            type: string
+        - description: Recovery Request ID
+          name: request
+          in: query
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: string
+        description: >-
+          Email to Recover
+
+
+          Needs to be set when initiating the flow. If the email is a registered
+
+          recovery email, a recovery link will be sent. If the email is not known,
+
+          a email with details on what happened will be sent instead.
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/registration:
+    get:
+      description: >-
+        This endpoint initializes a browser-based user registration flow. Once
+        initialized, the browser will be redirected to
+
+        selfservice.flows.registration.ui_url with the request ID set as a query parameter. If a valid user session exists already, the browser will be
+
+        redirected to urls.default_redirect_url.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works
+
+        with browsers (Chrome, Firefox, ...).
+
+
+        More information can be found at [ORY Kratos User Login and User Registration Documentation](https://www.ory.sh/docs/next/kratos/self-service/flows/user-login-user-registration).
+      tags:
+        - public
+      summary: Initialize browser-based registration user flow
+      operationId: initializeSelfServiceBrowserRegistrationFlow
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/registration/strategies/oidc/settings/connections:
+    post:
+      description: >-
+        This endpoint completes a browser-based settings flow. This is usually
+        achieved by POSTing data to this
+
+        endpoint.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works with browsers (Chrome, Firefox, ...) and HTML Forms.
+
+
+        More information can be found at [ORY Kratos User Settings & Profile Management Documentation](../self-service/flows/user-settings).
+      tags:
+        - public
+      summary: Complete the browser-based settings flow for the OpenID Connect strategy
+      operationId: completeSelfServiceBrowserSettingsOIDCSettingsFlow
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/requests/login:
+    get:
+      description: >-
+        This endpoint returns a login request's context with, for example, error
+        details and
+
+        other information.
+
+
+        When accessing this endpoint through ORY Kratos' Public API, ensure that cookies are set as they are required for CSRF to work. To prevent
+
+        token scanning attacks, the public endpoint does not return 404 status codes.
+
+
+        More information can be found at [ORY Kratos User Login and User Registration Documentation](https://www.ory.sh/docs/next/kratos/self-service/flows/user-login-user-registration).
+      tags:
+        - common
+        - public
+        - admin
+      summary: Get the request context of browser-based login user flows
+      operationId: getSelfServiceBrowserLoginRequest
+      parameters:
+        - description: >-
+            Request is the Login Request ID
+
+
+            The value for this parameter comes from request URL Query parameter sent to your
+
+            application (e.g. /login?request=abcde).
+          name: request
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: loginRequest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/loginRequest"
+        "403":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "404":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "410":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/requests/recovery:
+    get:
+      description: >-
+        When accessing this endpoint through ORY Kratos' Public API, ensure that
+        cookies are set as they are required
+
+        for checking the auth session. To prevent scanning attacks, the public endpoint does not return 404 status codes
+
+        but instead 403 or 500.
+
+
+        More information can be found at [ORY Kratos Account Recovery Documentation](../self-service/flows/password-reset-account-recovery).
+      tags:
+        - common
+        - public
+        - admin
+      summary: Get the request context of browser-based recovery flows
+      operationId: getSelfServiceBrowserRecoveryRequest
+      parameters:
+        - description: >-
+            Request is the Login Request ID
+
+
+            The value for this parameter comes from request URL Query parameter sent to your
+
+            application (e.g. /recover?request=abcde).
+          name: request
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: recoveryRequest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/recoveryRequest"
+        "403":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "404":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "410":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/requests/registration:
+    get:
+      description: >-
+        This endpoint returns a registration request's context with, for
+        example, error details and
+
+        other information.
+
+
+        When accessing this endpoint through ORY Kratos' Public API, ensure that cookies are set as they are required for CSRF to work. To prevent
+
+        token scanning attacks, the public endpoint does not return 404 status codes.
+
+
+        More information can be found at [ORY Kratos User Login and User Registration Documentation](https://www.ory.sh/docs/next/kratos/self-service/flows/user-login-user-registration).
+      tags:
+        - common
+        - public
+        - admin
+      summary: Get the request context of browser-based registration user flows
+      operationId: getSelfServiceBrowserRegistrationRequest
+      parameters:
+        - description: >-
+            Request is the Registration Request ID
+
+
+            The value for this parameter comes from request URL Query parameter sent to your
+
+            application (e.g. /registration?request=abcde).
+          name: request
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: registrationRequest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/registrationRequest"
+        "403":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "404":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "410":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/requests/settings:
+    get:
+      description: >-
+        When accessing this endpoint through ORY Kratos' Public API, ensure that
+        cookies are set as they are required
+
+        for checking the auth session. To prevent scanning attacks, the public endpoint does not return 404 status codes
+
+        but instead 403 or 500.
+
+
+        More information can be found at [ORY Kratos User Settings & Profile Management Documentation](../self-service/flows/user-settings).
+      tags:
+        - common
+        - public
+        - admin
+      summary: Get the request context of browser-based settings flows
+      operationId: getSelfServiceBrowserSettingsRequest
+      parameters:
+        - description: >-
+            Request is the Login Request ID
+
+
+            The value for this parameter comes from request URL Query parameter sent to your
+
+            application (e.g. /settingss?request=abcde).
+          name: request
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: settingsRequest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/settingsRequest"
+        "403":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "404":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "410":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/requests/verification:
+    get:
+      description: >-
+        When accessing this endpoint through ORY Kratos' Public API, ensure that
+        cookies are set as they are required
+
+        for checking the auth session. To prevent scanning attacks, the public endpoint does not return 404 status codes
+
+        but instead 403 or 500.
+
+
+        More information can be found at [ORY Kratos Email and Phone Verification Documentation](https://www.ory.sh/docs/kratos/selfservice/flows/verify-email-account-activation).
+      tags:
+        - common
+        - public
+        - admin
+      summary: Get the request context of browser-based verification flows
+      operationId: getSelfServiceVerificationRequest
+      parameters:
+        - description: >-
+            Request is the Request ID
+
+
+            The value for this parameter comes from request URL Query parameter sent to your
+
+            application (e.g. /verify?request=abcde).
+          name: request
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: verificationRequest
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/verificationRequest"
+        "403":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "404":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/settings:
+    get:
+      description: >-
+        This endpoint initializes a browser-based settings flow. Once
+        initialized, the browser will be redirected to
+
+        selfservice.flows.settings.ui_url with the request ID set as a query parameter. If no valid user session exists, a login
+
+        flow will be initialized.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works
+
+        with browsers (Chrome, Firefox, ...).
+
+
+        More information can be found at [ORY Kratos User Settings & Profile Management Documentation](../self-service/flows/user-settings).
+      tags:
+        - public
+      summary: Initialize browser-based settings flow
+      operationId: initializeSelfServiceSettingsFlow
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/settings/strategies/password:
+    post:
+      description: >-
+        This endpoint completes a browser-based settings flow. This is usually
+        achieved by POSTing data to this
+
+        endpoint.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works with browsers (Chrome, Firefox, ...) and HTML Forms.
+
+
+        More information can be found at [ORY Kratos User Settings & Profile Management Documentation](../self-service/flows/user-settings).
+      tags:
+        - public
+      summary: Complete the browser-based settings flow for the password strategy
+      operationId: completeSelfServiceBrowserSettingsPasswordStrategyFlow
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/browser/flows/settings/strategies/profile:
+    post:
+      description: >-
+        This endpoint completes a browser-based settings flow. This is usually
+        achieved by POSTing data to this
+
+        endpoint.
+
+
+        If the provided profile data is valid against the Identity's Traits JSON Schema, the data will be updated and
+
+        the browser redirected to url.settings_ui for further steps.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works with browsers (Chrome, Firefox, ...) and HTML Forms.
+
+
+        More information can be found at [ORY Kratos User Settings & Profile Management Documentation](../self-service/flows/user-settings).
+      tags:
+        - public
+      summary: Complete the browser-based settings flow for profile data
+      operationId: completeSelfServiceBrowserSettingsProfileStrategyFlow
+      parameters:
+        - description: Request is the request ID.
+          name: request
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/completeSelfServiceBrowserSettingsStrateg\
+                yProfileFlowPayload"
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/completeSelfServiceBrowserSettingsStrateg\
+                yProfileFlowPayload"
+        required: true
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  "/self-service/browser/flows/verification/init/{via}":
+    get:
+      description: >-
+        This endpoint initializes a browser-based verification flow. Once
+        initialized, the browser will be redirected to
+
+        selfservice.flows.settings.ui_url with the request ID set as a query parameter. If no valid user session exists, a login
+
+        flow will be initialized.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works
+
+        with browsers (Chrome, Firefox, ...).
+
+
+        More information can be found at [ORY Kratos Email and Phone Verification Documentation](https://www.ory.sh/docs/kratos/selfservice/flows/verify-email-account-activation).
+      tags:
+        - public
+      summary: Initialize browser-based verification flow
+      operationId: initializeSelfServiceBrowserVerificationFlow
+      parameters:
+        - description: |-
+            What to verify
+
+            Currently only "email" is supported.
+          name: via
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  "/self-service/browser/flows/verification/{via}/complete":
+    post:
+      description: >-
+        This endpoint completes a browser-based verification flow. This is
+        usually achieved by POSTing data to this
+
+        endpoint.
+
+
+        If the provided data is valid against the Identity's Traits JSON Schema, the data will be updated and
+
+        the browser redirected to url.settings_ui for further steps.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works with browsers (Chrome, Firefox, ...) and HTML Forms.
+
+
+        More information can be found at [ORY Kratos Email and Phone Verification Documentation](https://www.ory.sh/docs/kratos/selfservice/flows/verify-email-account-activation).
+      tags:
+        - public
+      summary: Complete the browser-based verification flows
+      operationId: completeSelfServiceBrowserVerificationFlow
+      parameters:
+        - description: >-
+            Request is the Request ID
+
+
+            The value for this parameter comes from request URL Query parameter sent to your
+
+            application (e.g. /verify?request=abcde).
+          name: request
+          in: query
+          required: true
+          schema:
+            type: string
+        - description: |-
+            What to verify
+
+            Currently only "email" is supported.
+          name: via
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  "/self-service/browser/flows/verification/{via}/confirm/{code}":
+    get:
+      description: >-
+        This endpoint completes a browser-based verification flow.
+
+
+        > This endpoint is NOT INTENDED for API clients and only works with browsers (Chrome, Firefox, ...) and HTML Forms.
+
+
+        More information can be found at [ORY Kratos Email and Phone Verification Documentation](https://www.ory.sh/docs/kratos/selfservice/flows/verify-email-account-activation).
+      tags:
+        - public
+      summary: Complete the browser-based verification flows
+      operationId: selfServiceBrowserVerify
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+        - description: |-
+            What to verify
+
+            Currently only "email" is supported.
+          name: via
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "302":
+          description: >-
+            Empty responses are sent when, for example, resources are deleted.
+            The HTTP status code for empty responses is
+
+            typically 201.
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /self-service/errors:
+    get:
+      description: >-
+        This endpoint returns the error associated with a user-facing self
+        service errors.
+
+
+        When accessing this endpoint through ORY Kratos' Public API, ensure that cookies are set as they are required for CSRF to work. To prevent
+
+        token scanning attacks, the public endpoint does not return 404 status codes.
+
+
+        This endpoint supports stub values to help you implement the error UI:
+
+
+        ?error=stub:500 - returns a stub 500 (Internal Server Error) error.
+
+
+        More information can be found at [ORY Kratos User User Facing Error Documentation](https://www.ory.sh/docs/kratos/self-service/flows/user-facing-errors).
+      tags:
+        - common
+        - public
+        - admin
+      summary: Get user-facing self-service errors
+      operationId: getSelfServiceError
+      parameters:
+        - name: error
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User-facing error response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/errorContainer"
+        "403":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "404":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /sessions/whoami:
+    get:
+      description: >-
+        Uses the HTTP Headers in the GET request to determine (e.g. by using
+        checking the cookies) who is authenticated.
+
+        Returns a session object in the body or 401 if the credentials are invalid or no credentials were sent.
+
+        Additionally when the request it successful it adds the user ID to the 'X-Kratos-Authenticated-Identity-Id' header in the response.
+
+
+        This endpoint is useful for reverse proxies and API Gateways.
+      tags:
+        - public
+      summary: Check who the current HTTP session belongs to
+      operationId: whoami
+      responses:
+        "200":
+          description: session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/session"
+        "403":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+        "500":
+          description: genericError
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/genericError"
+  /version:
+    get:
+      description: >-
+        This endpoint returns the service version typically notated using
+        semantic versioning.
+
+
+        If the service supports TLS Edge Termination, this endpoint does not require the
+
+        X-Forwarded-Proto header to be set.
+
+
+        Be aware that if you are running multiple nodes of this service, the health status will never
+
+        refer to the cluster state, only to a single instance.
+      tags:
+        - version
+      summary: Get service version
+      operationId: getVersion
+      responses:
+        "200":
+          description: version
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/version"
+x-forwarded-proto: string
+x-request-id: string
+servers:
+  - url: /
+components:
+  requestBodies:
+    Identity:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Identity"
+      required: true
+  securitySchemes:
+    sessionToken:
+      type: apiKey
+      name: Authorization
+      in: header
+  schemas:
+    CredentialsType:
+      description: and so on.
+      type: string
+      title: CredentialsType  represents several different credential types, like
+        password credentials, passwordless credentials,
+    ID:
+      type: integer
+      format: int64
+    Identity:
+      type: object
+      required:
+        - id
+        - schema_id
+        - traits
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        recovery_addresses:
+          description: RecoveryAddresses contains all the addresses that can be used to
+            recover an identity.
+          type: array
+          items:
+            $ref: "#/components/schemas/RecoveryAddress"
+        schema_id:
+          description: SchemaID is the ID of the JSON Schema to be used for validating the
+            identity's traits.
+          type: string
+        schema_url:
+          description: >-
+            SchemaURL is the URL of the endpoint where the identity's traits
+            schema can be fetched from.
+
+
+            format: url
+          type: string
+        traits:
+          $ref: "#/components/schemas/Traits"
+        verifiable_addresses:
+          description: VerifiableAddresses contains all the addresses that can be verified
+            by the user.
+          type: array
+          items:
+            $ref: "#/components/schemas/VerifiableAddress"
+    Message:
+      type: object
+      properties:
+        context:
+          type: object
+        id:
+          $ref: "#/components/schemas/ID"
+        text:
+          type: string
+        type:
+          $ref: "#/components/schemas/Type"
+    Messages:
+      type: array
+      items:
+        $ref: "#/components/schemas/Message"
+    ProviderCredentialsConfig:
+      type: object
+      properties:
+        provider:
+          type: string
+        subject:
+          type: string
+    RecoveryAddress:
+      type: object
+      required:
+        - id
+        - value
+        - via
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        value:
+          type: string
+        via:
+          $ref: "#/components/schemas/RecoveryAddressType"
+    RecoveryAddressType:
+      type: string
+    RequestMethodConfig:
+      type: object
+      required:
+        - action
+        - method
+        - fields
+      properties:
+        action:
+          description: Action should be used as the form action URL
+          type: string
+        fields:
+          $ref: "#/components/schemas/formFields"
+        messages:
+          $ref: "#/components/schemas/Messages"
+        method:
+          description: Method is the form method (e.g. POST)
+          type: string
+    State:
+      type: string
+    Traits:
+      type: object
+    Type:
+      type: string
+    UUID:
+      type: string
+      format: uuid4
+    VerifiableAddress:
+      type: object
+      required:
+        - id
+        - value
+        - verified
+        - via
+        - expires_at
+      properties:
+        expires_at:
+          type: string
+          format: date-time
+        id:
+          $ref: "#/components/schemas/UUID"
+        value:
+          type: string
+        verified:
+          type: boolean
+        verified_at:
+          type: string
+          format: date-time
+        via:
+          $ref: "#/components/schemas/VerifiableAddressType"
+    VerifiableAddressType:
+      type: string
+    completeSelfServiceBrowserSettingsStrategyProfileFlowPayload:
+      type: object
+      required:
+        - traits
+      properties:
+        request_id:
+          description: |-
+            RequestID is request ID.
+
+            in: query
+          type: string
+        traits:
+          description: |-
+            Traits contains all of the identity's traits.
+
+            type: string
+            format: binary
+          type: object
+    createRecoveryLinkResponse:
+      type: object
+      required:
+        - recovery_link
+      properties:
+        expires_at:
+          description: |-
+            Recovery Link Expires At
+
+            The timestamp when the recovery link expires.
+          type: string
+          format: date-time
+        recovery_link:
+          description: |-
+            Recovery Link
+
+            This link can be used to recover the account.
+          type: string
+    errorContainer:
+      type: object
+      properties:
+        errors:
+          type: object
+        id:
+          $ref: "#/components/schemas/UUID"
+    form:
+      description: HTMLForm represents a HTML Form. The container can work with both HTTP
+        Form and JSON requests
+      type: object
+      required:
+        - action
+        - method
+        - fields
+      properties:
+        action:
+          description: Action should be used as the form action URL .
+          type: string
+        fields:
+          $ref: "#/components/schemas/formFields"
+        messages:
+          $ref: "#/components/schemas/Messages"
+        method:
+          description: Method is the form method (e.g. POST)
+          type: string
+    formField:
+      description: Field represents a HTML Form Field
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        disabled:
+          description: Disabled is the equivalent of
+          type: boolean
+        messages:
+          $ref: "#/components/schemas/Messages"
+        name:
+          description: Name is the equivalent of 
+
+          type: string
+        pattern:
+          description: Pattern is the equivalent of 
+
+          type: string
+        required:
+          description: Required is the equivalent of 
+
+          type: boolean
+        type:
+          description: Type is the equivalent of 
+
+          type: string
+        value:
+          description: Value is the equivalent of 
+          type: object
+    formFields:
+      description: Fields contains multiple fields
+      type: array
+      items:
+        $ref: "#/components/schemas/formField"
+    genericError:
+      description: Error responses are sent when an error (e.g. unauthorized, bad request,
+        ...) occurred.
+      type: object
+      title: Error response
+      properties:
+        error:
+          $ref: "#/components/schemas/genericErrorPayload"
+    genericErrorPayload:
+      type: object
+      properties:
+        code:
+          description: Code represents the error status code (404, 403, 401, ...).
+          type: integer
+          format: int64
+          example: 404
+        debug:
+          description: Debug contains debug information. This is usually not available and
+            has to be enabled.
+          type: string
+          example: The database adapter was unable to find the element
+        details:
+          type: object
+          additionalProperties: true
+        message:
+          type: string
+        reason:
+          type: string
+        request:
+          type: string
+        status:
+          type: string
+    healthNotReadyStatus:
+      type: object
+      properties:
+        errors:
+          description: Errors contains a list of errors that caused the not ready status.
+          type: object
+          additionalProperties:
+            type: string
+    healthStatus:
+      type: object
+      properties:
+        status:
+          description: Status always contains "ok".
+          type: string
+    loginRequest:
+      type: object
+      required:
+        - id
+        - expires_at
+        - issued_at
+        - request_url
+        - methods
+      properties:
+        active:
+          $ref: "#/components/schemas/CredentialsType"
+        expires_at:
+          description: >-
+            ExpiresAt is the time (UTC) when the request expires. If the user
+            still wishes to log in,
+
+            a new request has to be initiated.
+          type: string
+          format: date-time
+        forced:
+          description: Forced stores whether this login request should enforce
+            reauthentication.
+          type: boolean
+        id:
+          $ref: "#/components/schemas/UUID"
+        issued_at:
+          description: IssuedAt is the time (UTC) when the request occurred.
+          type: string
+          format: date-time
+        messages:
+          $ref: "#/components/schemas/Messages"
+        methods:
+          description: >-
+            Methods contains context for all enabled login methods. If a login
+            request has been
+
+            processed, but for example the password is incorrect, this will contain error messages.
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/loginRequestMethod"
+        request_url:
+          description: >-
+            RequestURL is the initial URL that was requested from ORY Kratos. It
+            can be used
+
+            to forward information contained in the URL's path or query for example.
+          type: string
+    loginRequestMethod:
+      type: object
+      required:
+        - method
+        - config
+      properties:
+        config:
+          $ref: "#/components/schemas/loginRequestMethodConfig"
+        method:
+          $ref: "#/components/schemas/CredentialsType"
+    loginRequestMethodConfig:
+      type: object
+      required:
+        - action
+        - method
+        - fields
+      properties:
+        action:
+          description: Action should be used as the form action URL .
+          type: string
+        fields:
+          $ref: "#/components/schemas/formFields"
+        messages:
+          $ref: "#/components/schemas/Messages"
+        method:
+          description: Method is the form method (e.g. POST)
+          type: string
+        providers:
+          description: Providers is set for the "oidc" request method.
+          type: array
+          items:
+            $ref: "#/components/schemas/formField"
+    recoveryRequest:
+      description: >-
+        This request is used when an identity wants to recover their account.
+        We recommend reading the [Account Recovery Documentation](../self-service/flows/password-reset-account-recovery)
+      type: object
+      title: Request presents a recovery request
+      required:
+        - id
+        - expires_at
+        - issued_at
+        - request_url
+        - methods
+        - state
+      properties:
+        active:
+          description: >-
+            Active, if set, contains the registration method that is being used.
+            It is initially
+
+            not set.
+          type: string
+        expires_at:
+          description: >-
+            ExpiresAt is the time (UTC) when the request expires. If the user
+            still wishes to update the setting,
+
+            a new request has to be initiated.
+          type: string
+          format: date-time
+        id:
+          $ref: "#/components/schemas/UUID"
+        issued_at:
+          description: IssuedAt is the time (UTC) when the request occurred.
+          type: string
+          format: date-time
+        messages:
+          $ref: "#/components/schemas/Messages"
+        methods:
+          description: >-
+            Methods contains context for all account recovery methods. If a
+            registration request has been
+
+            processed, but for example the password is incorrect, this will contain error messages.
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/recoveryRequestMethod"
+        request_url:
+          description: >-
+            RequestURL is the initial URL that was requested from ORY Kratos. It
+            can be used
+
+            to forward information contained in the URL's path or query for example.
+          type: string
+        state:
+          $ref: "#/components/schemas/State"
+    recoveryRequestMethod:
+      type: object
+      properties:
+        config:
+          $ref: "#/components/schemas/RequestMethodConfig"
+        method:
+          description: Method contains the request credentials type.
+          type: string
+    registrationRequest:
+      type: object
+      required:
+        - id
+        - expires_at
+        - issued_at
+        - request_url
+        - methods
+      properties:
+        active:
+          $ref: "#/components/schemas/CredentialsType"
+        expires_at:
+          description: >-
+            ExpiresAt is the time (UTC) when the request expires. If the user
+            still wishes to log in,
+
+            a new request has to be initiated.
+          type: string
+          format: date-time
+        id:
+          $ref: "#/components/schemas/UUID"
+        issued_at:
+          description: IssuedAt is the time (UTC) when the request occurred.
+          type: string
+          format: date-time
+        messages:
+          $ref: "#/components/schemas/Messages"
+        methods:
+          description: >-
+            Methods contains context for all enabled registration methods. If a
+            registration request has been
+
+            processed, but for example the password is incorrect, this will contain error messages.
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/registrationRequestMethod"
+        request_url:
+          description: >-
+            RequestURL is the initial URL that was requested from ORY Kratos. It
+            can be used
+
+            to forward information contained in the URL's path or query for example.
+          type: string
+    registrationRequestMethod:
+      type: object
+      properties:
+        config:
+          $ref: "#/components/schemas/registrationRequestMethodConfig"
+        method:
+          $ref: "#/components/schemas/CredentialsType"
+    registrationRequestMethodConfig:
+      type: object
+      required:
+        - action
+        - method
+        - fields
+      properties:
+        action:
+          description: Action should be used as the form action URL .
+          type: string
+        fields:
+          $ref: "#/components/schemas/formFields"
+        messages:
+          $ref: "#/components/schemas/Messages"
+        method:
+          description: Method is the form method (e.g. POST)
+          type: string
+        providers:
+          description: Providers is set for the "oidc" request method.
+          type: array
+          items:
+            $ref: "#/components/schemas/formField"
+    session:
+      type: object
+      required:
+        - sid
+        - expires_at
+        - authenticated_at
+        - issued_at
+        - identity
+      properties:
+        authenticated_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        identity:
+          $ref: "#/components/schemas/Identity"
+        issued_at:
+          type: string
+          format: date-time
+        sid:
+          $ref: "#/components/schemas/UUID"
+    settingsRequest:
+      description: >-
+        This request is used when an identity wants to update settings
+        (e.g. profile data, passwords, ...) in a selfservice manner.
+        We recommend reading the [User Settings Documentation](../self-service/flows/user-settings)
+      type: object
+      title: Request presents a settings request
+      required:
+        - id
+        - expires_at
+        - issued_at
+        - request_url
+        - methods
+        - identity
+        - state
+      properties:
+        active:
+          description: >-
+            Active, if set, contains the registration method that is being used.
+            It is initially
+            not set.
+          type: string
+        expires_at:
+          description: >-
+            ExpiresAt is the time (UTC) when the request expires. If the user
+            still wishes to update the setting,
+            a new request has to be initiated.
+          type: string
+          format: date-time
+        id:
+          $ref: "#/components/schemas/UUID"
+        identity:
+          $ref: "#/components/schemas/Identity"
+        issued_at:
+          description: IssuedAt is the time (UTC) when the request occurred.
+          type: string
+          format: date-time
+        messages:
+          $ref: "#/components/schemas/Messages"
+        methods:
+          description: >-
+            Methods contains context for all enabled registration methods. If a
+            registration request has been
+            processed, but for example the password is incorrect, this will contain error messages.
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/settingsRequestMethod"
+        request_url:
+          description: >-
+            RequestURL is the initial URL that was requested from ORY Kratos. It
+            can be used
+            to forward information contained in the URL's path or query for example.
+          type: string
+        state:
+          $ref: "#/components/schemas/State"
+    settingsRequestMethod:
+      type: object
+      properties:
+        config:
+          $ref: "#/components/schemas/RequestMethodConfig"
+        method:
+          description: Method contains the request credentials type.
+          type: string
+    verificationRequest:
+      description: >-
+        This request is used when an identity wants to verify an out-of-band
+        communication
+        channel such as an email address or a phone number.
+        For more information head over to: https://www.ory.sh/docs/kratos/selfservice/flows/verify-email-account-activation
+      type: object
+      title: Request presents a verification request
+      properties:
+        expires_at:
+          description: >-
+            ExpiresAt is the time (UTC) when the request expires. If the user
+            still wishes to verify the address,
+            a new request has to be initiated.
+          type: string
+          format: date-time
+        form:
+          $ref: "#/components/schemas/form"
+        id:
+          $ref: "#/components/schemas/UUID"
+        issued_at:
+          description: IssuedAt is the time (UTC) when the request occurred.
+          type: string
+          format: date-time
+        messages:
+          $ref: "#/components/schemas/Messages"
+        request_url:
+          description: >-
+            RequestURL is the initial URL that was requested from ORY Kratos. It
+            can be used
+            to forward information contained in the URL's path or query for example.
+          type: string
+        success:
+          description: Success, if true, implies that the request was completed
+            successfully.
+          type: boolean
+        via:
+          $ref: "#/components/schemas/VerifiableAddressType"
+    version:
+      type: object
+      properties:
+        version:
+          description: Version is the service's version.
+          type: string
